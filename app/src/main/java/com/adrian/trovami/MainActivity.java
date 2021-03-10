@@ -21,15 +21,19 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -41,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GoogleMap mMap;
     private SupportMapFragment mapFragment;
     private Location userLocation;
+    private ArrayList<Taco> tacos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +60,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+
+        tacos= new ArrayList<>();
+        tacos.add(new Taco(19.549781, -99.236493,"Tacos Rocky's"));
+        tacos.add(new Taco(19.556858, -99.234690,"Tacos Don Javier"));
+        tacos.add(new Taco(19.556333, -99.239840,"Taqueria la modelo"));
+        tacos.add(new Taco(19.560538, -99.241728,"Tacos El Tio"));
+        tacos.add(new Taco(19.556454, -99.242973,"Taqueria los primos"));
     }
 
     @Override
@@ -123,11 +135,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private void getUserLastLocation(Location userLocation) {
         if(userLocation!=null){
-            TextView locationTextView= (TextView) findViewById(R.id.main_activity_location_textView);
             String longitude= String.valueOf(userLocation.getLongitude());
             String latitude= String.valueOf(userLocation.getLatitude());
-
-            locationTextView.setText("Longitude: "+ longitude+" .Latitude: "+latitude);
             this.userLocation = userLocation;
             mapFragment.getMapAsync(this);
         }
@@ -137,8 +146,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        BitmapDescriptor tacoMarketIcon = BitmapDescriptorFactory.fromResource(R.drawable.taco);
+
         LatLng userCoordinates = new LatLng(userLocation.getLatitude(), userLocation.getLongitude());
         mMap.addMarker(new MarkerOptions().position(userCoordinates).title("User's Location"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(userCoordinates));
+
+        for (Taco taco: tacos) {
+            mMap.addMarker(new MarkerOptions().position(new LatLng(taco.getLatitude(),taco.getLongitude()))
+            .title(taco.getFlavor())
+            .icon(tacoMarketIcon));
+        }
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(userCoordinates));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userCoordinates, 12));
     }
 }
