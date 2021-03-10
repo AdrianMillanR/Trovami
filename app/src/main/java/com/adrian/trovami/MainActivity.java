@@ -21,6 +21,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -28,20 +34,27 @@ import java.util.concurrent.TimeUnit;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
 
     private static final int ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE = 0;
     private GoogleApiClient googleApiClient;
+    private GoogleMap mMap;
+    private SupportMapFragment mapFragment;
+    private Location userLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
     }
 
     @Override
@@ -57,18 +70,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
     public void onConnected(@Nullable Bundle bundle) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
             if (checkSelfPermission(ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
                 Location userLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+                getUserLastLocation(userLocation);
 
-                if(userLocation!=null){
-                    TextView locationTextView= (TextView) findViewById(R.id.main_activity_location_textView);
-                    String longitude= String.valueOf(userLocation.getLongitude());
-                    String latitude= String.valueOf(userLocation.getLatitude());
-
-                    locationTextView.setText("Longitude: "+ longitude+" .Latitude: "+latitude);
-                }
             }else{
                 final String[] permissions = new String[]{ACCESS_FINE_LOCATION};
                 requestPermissions(permissions, ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE);
@@ -78,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             getUserLastLocation(userLocation);
         }
     }
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -93,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 builder.setMessage("Debes aceptar este permiso para utlizar la app Trovami");
                 builder.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(DialogInterface dialogInterface, int i) {
                         final String[] permissions = new String[]{ACCESS_FINE_LOCATION};
                         requestPermissions(permissions, ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE);
                     }
@@ -110,16 +128,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             String latitude= String.valueOf(userLocation.getLatitude());
 
             locationTextView.setText("Longitude: "+ longitude+" .Latitude: "+latitude);
+            this.userLocation = userLocation;
+            mapFragment.getMapAsync(this);
         }
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
 
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        LatLng userCoordinates = new LatLng(userLocation.getLatitude(), userLocation.getLongitude());
+        mMap.addMarker(new MarkerOptions().position(userCoordinates).title("User's Location"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(userCoordinates));
     }
 }
