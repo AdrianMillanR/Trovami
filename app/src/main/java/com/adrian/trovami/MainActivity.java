@@ -41,6 +41,7 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback {
 
     private static final int ACCESS_FINE_LOCATION_PERMISSION_REQUEST_CODE = 0;
+    private static final int RANGE_TO_DISPLAY_TACO_MARKER_IN_METERS = 2000;
     private GoogleApiClient googleApiClient;
     private GoogleMap mMap;
     private SupportMapFragment mapFragment;
@@ -64,9 +65,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         tacos= new ArrayList<>();
         tacos.add(new Taco(19.549781, -99.236493,"Tacos Rocky's"));
         tacos.add(new Taco(19.556858, -99.234690,"Tacos Don Javier"));
-        tacos.add(new Taco(19.556333, -99.239840,"Taqueria la modelo"));
+        tacos.add(new Taco(19.556333, -99.239840,"Taquería la modelo"));
         tacos.add(new Taco(19.560538, -99.241728,"Tacos El Tio"));
-        tacos.add(new Taco(19.556454, -99.242973,"Taqueria los primos"));
+        tacos.add(new Taco(19.556454, -99.242973,"Taquería los primos"));
+        tacos.add(new Taco(19.564576, -99.252931,"Tacos el patrón"));
+        tacos.add(new Taco(19.558421, -99.230935,"Tacos leo"));
+        tacos.add(new Taco(19.569866, -99.244868,"Taquería el Moreno"));
     }
 
     @Override
@@ -147,11 +151,24 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mMap = googleMap;
 
         BitmapDescriptor tacoMarketIcon = BitmapDescriptorFactory.fromResource(R.drawable.taco);
+        ArrayList<Taco> filteredTacoList = new ArrayList<>();
+
+        for (Taco taco: tacos){
+            Location tacoLocation= new Location("");
+            tacoLocation.setLatitude(taco.getLatitude());
+            tacoLocation.setLongitude(taco.getLongitude());
+
+            int distanceToTaco= Math.round(tacoLocation.distanceTo(userLocation));
+            if(distanceToTaco < RANGE_TO_DISPLAY_TACO_MARKER_IN_METERS){
+                filteredTacoList.add(taco);
+            }
+
+        }
 
         LatLng userCoordinates = new LatLng(userLocation.getLatitude(), userLocation.getLongitude());
         mMap.addMarker(new MarkerOptions().position(userCoordinates).title("User's Location"));
 
-        for (Taco taco: tacos) {
+        for (Taco taco: filteredTacoList) {
             mMap.addMarker(new MarkerOptions().position(new LatLng(taco.getLatitude(),taco.getLongitude()))
             .title(taco.getFlavor())
             .icon(tacoMarketIcon));
